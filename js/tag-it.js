@@ -1,29 +1,29 @@
 /*
-* jQuery UI Tag-it!
-*
-* @version v2.0 (06/2011)
-*
-* Copyright 2011, Levy Carneiro Jr.
-* Released under the MIT license.
-* http://aehlke.github.com/tag-it/LICENSE
-*
-* Homepage:
-*   http://aehlke.github.com/tag-it/
-*
-* Authors:
-*   Levy Carneiro Jr.
-*   Martin Rehfeld
-*   Tobias Schmidt
-*   Skylar Challand
-*   Alex Ehlke
-*
-* Maintainer:
-*   Alex Ehlke - Twitter: @aehlke
-*
-* Dependencies:
-*   jQuery v1.4+
-*   jQuery UI v1.8+
-*/
+ * jQuery UI Tag-it!
+ *
+ * @version v2.0 (06/2011)
+ *
+ * Copyright 2011, Levy Carneiro Jr.
+ * Released under the MIT license.
+ * http://aehlke.github.com/tag-it/LICENSE
+ *
+ * Homepage:
+ *   http://aehlke.github.com/tag-it/
+ *
+ * Authors:
+ *   Levy Carneiro Jr.
+ *   Martin Rehfeld
+ *   Tobias Schmidt
+ *   Skylar Challand
+ *   Alex Ehlke
+ *
+ * Maintainer:
+ *   Alex Ehlke - Twitter: @aehlke
+ *
+ * Dependencies:
+ *   jQuery v1.4+
+ *   jQuery UI v1.8+
+ */
 (function($) {
 
     $.widget('ui.tagit', {
@@ -119,6 +119,14 @@
                 });
             } else {
                 this.tagInput.attr('placeholder', text);
+            }
+        },
+
+        setInputDisabled: function(shouldDisable) {
+            if (shouldDisable) {
+                this.tagInput.attr('disabled', '');
+            } else {
+                this.tagInput.removeAttr('disabled');
             }
         },
 
@@ -287,12 +295,12 @@
                         }
                     }
                 }).blur(function(e){
-                    // Create a tag when the element loses focus.
-                    // If autocomplete is enabled and suggestion was clicked, don't add it.
-                    if (!that.tagInput.data('autocomplete-open')) {
-                        that.createTag(that._cleanedInput());
-                    }
-                });
+                // Create a tag when the element loses focus.
+                // If autocomplete is enabled and suggestion was clicked, don't add it.
+                if (!that.tagInput.data('autocomplete-open')) {
+                    that.createTag(that._cleanedInput());
+                }
+            });
 
             // Autocomplete.
             if (this.options.availableTags || this.options.tagSource || this.options.autocomplete.source) {
@@ -467,9 +475,9 @@
             if (!this.options.allowDuplicates && !this._isNew(value)) {
                 var existingTag = this._findTagByLabel(value);
                 if (this._trigger('onTagExists', null, {
-                    existingTag: existingTag,
-                    duringInitialization: duringInitialization
-                }) !== false) {
+                        existingTag: existingTag,
+                        duringInitialization: duringInitialization
+                    }) !== false) {
                     if (this._effectExists('highlight')) {
                         existingTag.effect('highlight');
                     }
@@ -514,11 +522,12 @@
             }
 
             if (this._trigger('beforeTagAdded', null, {
-                tag: tag,
-                tagLabel: this.tagLabel(tag),
-                duringInitialization: duringInitialization,
-                countOfTags: this._tags().length
-            }) === false) {
+                    tag: tag,
+                    tagLabel: this.tagLabel(tag),
+                    duringInitialization: duringInitialization,
+                    countOfTags: this._tags().length,
+                    tagInstance: this
+                }) === false) {
                 return;
             }
 
@@ -540,7 +549,8 @@
                 tag: tag,
                 tagLabel: this.tagLabel(tag),
                 duringInitialization: duringInitialization,
-                countOfTags: this._tags().length
+                countOfTags: this._tags().length,
+                tagInstance: this
             });
 
             if (this.options.showAutocompleteOnFocus && !duringInitialization) {
@@ -557,10 +567,11 @@
             this._trigger('onTagRemoved', null, tag);
 
             if (this._trigger('beforeTagRemoved', null, {
-                tag: tag,
-                tagLabel: this.tagLabel(tag),
-                countOfTags: this._tags().length
-            }) === false) {
+                    tag: tag,
+                    tagLabel: this.tagLabel(tag),
+                    countOfTags: this._tags().length,
+                    tagInstance: this
+                }) === false) {
                 return;
             }
 
@@ -583,7 +594,8 @@
                     thisTag._trigger('afterTagRemoved', null, {
                         tag: tag,
                         tagLabel: thisTag.tagLabel(tag),
-                        countOfTags: thisTag._tags().length
+                        countOfTags: thisTag._tags().length,
+                        tagInstance: this
                     });
                 });
 
@@ -593,7 +605,8 @@
                 this._trigger('afterTagRemoved', null, {
                     tag: tag,
                     tagLabel: this.tagLabel(tag),
-                    countOfTags: this._tags().length
+                    countOfTags: this._tags().length,
+                    tagInstance: this
                 });
             }
 

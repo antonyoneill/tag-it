@@ -56,10 +56,12 @@
                 afterTagAdded: function (event, ui) {
                     if (ui.countOfTags === tagLimit) {
                         $('#ShareRequest_ToEmails').tagit('setPlaceholderText', 'You can\'t add more!', false);
+                        $('li.tagit-new input').attr('disabled', '');
                     }
                 },
                 beforeTagRemoved: function(event, ui) {
                     console.log(ui);
+                    $('li.tagit-new input').removeAttr('disabled');   
                     if (ui.countOfTags === 0) {
                         $('#ShareRequest_ToEmails').tagit('setPlaceholderText', placeholderTextBefore);
                     } else {
