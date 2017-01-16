@@ -612,6 +612,21 @@
 
         },
 
+        scrollToBottom: function() {
+            var that = this;
+            setTimeout(function() {
+                var $ul = that.tagInput.parent().parent();
+                var scrollTop = 10000;
+                if (that.options.animate) {
+                    $ul.animate({
+                       scrollTop: scrollTop
+                   }, 'slow');
+                } else {
+                    $ul.scrollTop(scrollTop);
+                }
+            });
+        },
+
         removeTagByLabel: function(tagLabel, animate) {
             var toRemove = this._findTagByLabel(tagLabel);
             if (!toRemove) {
