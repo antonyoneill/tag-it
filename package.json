@@ -5,7 +5,7 @@
   "main": "js/tag-it.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aehlke/tag-it.git"
+    "url": "git+https://github.com/mention-me/tag-it.git"
   },
   "keywords": [
     "jquery",
