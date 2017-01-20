@@ -112,11 +112,9 @@
                 //Don't bother resetting if it's the same
                 return;
             }
-
+            $(this).attr('size', text.length);
             if (this.options.animate && animate) {
-                this.tagInput.fadeOut(function() {
-                    $(this).attr('placeholder', text).fadeIn();
-                });
+                this.tagInput.attr('placeholder', text).fadeIn();
             } else {
                 this.tagInput.attr('placeholder', text);
             }
