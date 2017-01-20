@@ -276,7 +276,7 @@ Clears the widget of all tags — removes each tag it contains, so the **beforeT
 
     $("#myTags").tagit("removeAll");
 
-### setPlaceholderText(text, animate = true)
+### setPlaceholderText(text, animate)
 Updates the placeholder text for the next input. You can call this inside
 one of the event call backs. For instance:
 

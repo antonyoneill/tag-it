@@ -107,7 +107,7 @@
             // Do not use the above deprecated options.
         },
 
-        setPlaceholderText: function(text, animate = true) {
+        setPlaceholderText: function(text, animate) {
             if (text === this.tagInput.attr('placeholder')) {
                 //Don't bother resetting if it's the same
                 return;
