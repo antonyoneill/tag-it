@@ -114,9 +114,9 @@
             }
             $(this).attr('size', text.length);
             if (this.options.animate && animate) {
-                this.tagInput.attr('placeholder', text).fadeIn();
+                this.tagInput.animate({'placeholder': text, size: text.length});
             } else {
-                this.tagInput.attr('placeholder', text);
+                this.tagInput.attr({'placeholder': text, size: text.length});
             }
         },
 
