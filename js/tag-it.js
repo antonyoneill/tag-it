@@ -243,33 +243,35 @@
 
             // Events.
             this.tagInput
-                .keydown(function(event) {
-                    // Backspace is not detected within a keypress, so it must use keydown.
-                    if (event.which == $.ui.keyCode.BACKSPACE && that.tagInput.val() === '') {
-                        var tag = that._lastTag();
-                        if (!that.options.removeConfirmation || tag.hasClass('remove')) {
-                            // When backspace is pressed, the last tag is deleted.
-                            that.removeTag(tag);
-                        } else if (that.options.removeConfirmation) {
-                            tag.addClass('remove ui-state-highlight');
+                .keyup(function(event) {
+                    //Use a keyup event to do this instead as there are some issues with Android where the event doesn't
+                    //actually provide the keycode as you'd expect!
+
+                    var keyPressed = event.keyCode || event.which;
+                    if (navigator.userAgent.match(/Android/i)) {
+                        //If we're in android we can't possibly trust
+
+                        var tag = this.value;
+                        if (keyPressed == 0 || keyPressed == 229) {
+                            //If it's one of these then don't trust it and just get the last char in the input
+                            keyPressed = tag.charCodeAt(tag.length - 1);
                         }
-                    } else if (that.options.removeConfirmation) {
-                        that._lastTag().removeClass('remove ui-state-highlight');
                     }
+
 
                     // Comma/Space/Enter are all valid delimiters for new tags,
                     // except when there is an open quote or if setting allowSpaces = true.
                     // Tab will also create a tag, unless the tag input is empty,
                     // in which case it isn't caught.
                     if (
-                        (event.which === $.ui.keyCode.COMMA && event.shiftKey === false) ||
-                        event.which === $.ui.keyCode.ENTER ||
+                        (keyPressed === $.ui.keyCode.COMMA && event.shiftKey === false) ||
+                        keyPressed === $.ui.keyCode.ENTER ||
                         (
-                            event.which == $.ui.keyCode.TAB &&
+                            keyPressed == $.ui.keyCode.TAB &&
                             that.tagInput.val() !== ''
                         ) ||
                         (
-                            event.which == $.ui.keyCode.SPACE &&
+                            keyPressed == $.ui.keyCode.SPACE &&
                             that.options.allowSpaces !== true &&
                             (
                                 $.trim(that.tagInput.val()).replace( /^s*/, '' ).charAt(0) != '"' ||
@@ -282,7 +284,7 @@
                         )
                     ) {
                         // Enter submits the form if there's no text in the input.
-                        if (!(event.which === $.ui.keyCode.ENTER && that.tagInput.val() === '')) {
+                        if (!(keyPressed === $.ui.keyCode.ENTER && that.tagInput.val() === '')) {
                             event.preventDefault();
                         }
 
@@ -291,6 +293,19 @@
                             that.tagInput.autocomplete('close');
                             that.createTag(that._cleanedInput());
                         }
+                    }
+                }).keydown(function(event) {
+                    // Backspace is not detected within a keypress, so it must use keydown
+                    if (event.which == $.ui.keyCode.BACKSPACE && that.tagInput.val() === '') {
+                        var tag = that._lastTag();
+                        if (!that.options.removeConfirmation || tag.hasClass('remove')) {
+                            // When backspace is pressed, the last tag is deleted.
+                            that.removeTag(tag);
+                        } else if (that.options.removeConfirmation) {
+                            tag.addClass('remove ui-state-highlight');
+                        }
+                    } else if (that.options.removeConfirmation) {
+                        that._lastTag().removeClass('remove ui-state-highlight');
                     }
                 }).blur(function(e){
                 // Create a tag when the element loses focus.
