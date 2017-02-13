@@ -246,11 +246,11 @@
                 .keyup(function(event) {
                     //Use a keyup event to do this instead as there are some issues with Android where the event doesn't
                     //actually provide the keycode as you'd expect!
+                    //This is actually also an issue on iPad when you use a physical keyboard (like a BT):
+                    // http://stackoverflow.com/a/28951227
 
                     var keyPressed = event.keyCode || event.which;
-                    if (navigator.userAgent.match(/Android/i)) {
-                        //If we're in android we can't possibly trust
-
+                    if (navigator.userAgent.match(/Android|iPad/i)) {
                         var tag = this.value;
                         if (keyPressed == 0 || keyPressed == 229) {
                             //If it's one of these then don't trust it and just get the last char in the input
