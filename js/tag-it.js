@@ -241,73 +241,87 @@
                 });
             }
 
-            // Events.
-            this.tagInput
-                .keyup(function(event) {
-                    //Use a keyup event to do this instead as there are some issues with Android where the event doesn't
-                    //actually provide the keycode as you'd expect!
-                    //This is actually also an issue on iPad when you use a physical keyboard (like a BT):
-                    // http://stackoverflow.com/a/28951227
+            //Events
 
-                    var keyPressed = event.keyCode || event.which;
-                    if (navigator.userAgent.match(/Android|iPad/i)) {
-                        var tag = this.value;
-                        if (keyPressed == 0 || keyPressed == 229) {
-                            //If it's one of these then don't trust it and just get the last char in the input
-                            keyPressed = tag.charCodeAt(tag.length - 1);
-                        }
+            var createTagListener = function(event) {
+                //Use a keyup event to do this instead as there are some issues with Android where the event doesn't
+                //actually provide the keycode as you'd expect!
+                //This is actually also an issue on iPad when you use a physical keyboard (like a BT):
+                // http://stackoverflow.com/a/28951227
+
+                var keyPressed = event.keyCode || event.which;
+                if (navigator.userAgent.match(/Android|iPad/i)) {
+                    var tag = this.value;
+                    if (keyPressed == 0 || keyPressed == 229) {
+                        //If it's one of these then don't trust it and just get the last char in the input
+                        keyPressed = tag.charCodeAt(tag.length - 1);
                     }
+                }
 
 
-                    // Comma/Space/Enter are all valid delimiters for new tags,
-                    // except when there is an open quote or if setting allowSpaces = true.
-                    // Tab will also create a tag, unless the tag input is empty,
-                    // in which case it isn't caught.
-                    if (
-                        (keyPressed === $.ui.keyCode.COMMA && event.shiftKey === false) ||
-                        keyPressed === $.ui.keyCode.ENTER ||
+                // Comma/Space/Enter are all valid delimiters for new tags,
+                // except when there is an open quote or if setting allowSpaces = true.
+                // Tab will also create a tag, unless the tag input is empty,
+                // in which case it isn't caught.
+                if (
+                    (keyPressed === $.ui.keyCode.COMMA && event.shiftKey === false) ||
+                    keyPressed === $.ui.keyCode.ENTER ||
+                    (
+                        keyPressed == $.ui.keyCode.TAB &&
+                        that.tagInput.val() !== ''
+                    ) ||
+                    (
+                        keyPressed == $.ui.keyCode.SPACE &&
+                        that.options.allowSpaces !== true &&
                         (
-                            keyPressed == $.ui.keyCode.TAB &&
-                            that.tagInput.val() !== ''
-                        ) ||
-                        (
-                            keyPressed == $.ui.keyCode.SPACE &&
-                            that.options.allowSpaces !== true &&
+                            $.trim(that.tagInput.val()).replace( /^s*/, '' ).charAt(0) != '"' ||
                             (
-                                $.trim(that.tagInput.val()).replace( /^s*/, '' ).charAt(0) != '"' ||
-                                (
-                                    $.trim(that.tagInput.val()).charAt(0) == '"' &&
-                                    $.trim(that.tagInput.val()).charAt($.trim(that.tagInput.val()).length - 1) == '"' &&
-                                    $.trim(that.tagInput.val()).length - 1 !== 0
-                                )
+                                $.trim(that.tagInput.val()).charAt(0) == '"' &&
+                                $.trim(that.tagInput.val()).charAt($.trim(that.tagInput.val()).length - 1) == '"' &&
+                                $.trim(that.tagInput.val()).length - 1 !== 0
                             )
                         )
-                    ) {
-                        // Enter submits the form if there's no text in the input.
-                        if (!(keyPressed === $.ui.keyCode.ENTER && that.tagInput.val() === '')) {
-                            event.preventDefault();
-                        }
+                    )
+                ) {
+                    // Enter submits the form if there's no text in the input.
+                    if (!(keyPressed === $.ui.keyCode.ENTER && that.tagInput.val() === '')) {
+                        event.preventDefault();
+                    }
 
-                        // Autocomplete will create its own tag from a selection and close automatically.
-                        if (!(that.options.autocomplete.autoFocus && that.tagInput.data('autocomplete-open'))) {
-                            that.tagInput.autocomplete('close');
-                            that.createTag(that._cleanedInput());
-                        }
+                    // Autocomplete will create its own tag from a selection and close automatically.
+                    if (!(that.options.autocomplete.autoFocus && that.tagInput.data('autocomplete-open'))) {
+                        that.tagInput.autocomplete('close');
+                        that.createTag(that._cleanedInput());
                     }
-                }).keydown(function(event) {
-                    // Backspace is not detected within a keypress, so it must use keydown
-                    if (event.which == $.ui.keyCode.BACKSPACE && that.tagInput.val() === '') {
-                        var tag = that._lastTag();
-                        if (!that.options.removeConfirmation || tag.hasClass('remove')) {
-                            // When backspace is pressed, the last tag is deleted.
-                            that.removeTag(tag);
-                        } else if (that.options.removeConfirmation) {
-                            tag.addClass('remove ui-state-highlight');
-                        }
+                }
+            };
+
+            if (navigator.userAgent.match(/Android|iPad/i)) {
+                //If Android or iOS, we need to use keyup as we cannot get the actual key pressed, so we do it after
+                //the fact
+                this.tagInput.keyup(createTagListener);
+            } else {
+                //Otherwise, we can use keydown as we trust that the event will contain the real key pressed.
+                this.tagInput.keydown(createTagListener);
+            }
+
+
+            this.tagInput.keydown(function(event) {
+                // Backspace is not detected within a keypress, so it must use keydown
+                if (event.which == $.ui.keyCode.BACKSPACE && that.tagInput.val() === '') {
+                    var tag = that._lastTag();
+                    if (!that.options.removeConfirmation || tag.hasClass('remove')) {
+                        // When backspace is pressed, the last tag is deleted.
+                        that.removeTag(tag);
                     } else if (that.options.removeConfirmation) {
-                        that._lastTag().removeClass('remove ui-state-highlight');
+                        tag.addClass('remove ui-state-highlight');
                     }
-                }).blur(function(e){
+                } else if (that.options.removeConfirmation) {
+                    that._lastTag().removeClass('remove ui-state-highlight');
+                }
+            });
+
+            this.tagInput.blur(function(e){
                 // Create a tag when the element loses focus.
                 // If autocomplete is enabled and suggestion was clicked, don't add it.
                 if (!that.tagInput.data('autocomplete-open')) {
