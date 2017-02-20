@@ -313,7 +313,7 @@
                     that._lastTag().removeClass('remove ui-state-highlight');
                 }
 
-                if ((event.keyCode || event.which || event.charCode || 0) === 13) {
+                if ((event.keyCode || event.which || event.charCode || 0) === $.ui.keyCode.ENTER) {
                     //Because we're tagging on keyup, sometimes hitting enter will get us here, and we want to ensure
                     //that we've tagged as much as possible before allowing the form to submit:
                     createTagListener(event);
