@@ -244,8 +244,7 @@
             //Events
 
             var createTagListener = function(event) {
-                //Use a keyup event to do this instead as there are some issues with Android where the event doesn't
-                //actually provide the keycode as you'd expect!
+                //There are some issues with Android where the event doesn't actually provide the keycode as you'd expect!
                 //This is actually also an issue on iPad when you use a physical keyboard (like a BT):
                 // http://stackoverflow.com/a/28951227
 
@@ -296,17 +295,11 @@
                 }
             };
 
-            if (navigator.userAgent.match(/Android|iPad/i)) {
+            this.tagInput
                 //If Android or iOS, we need to use keyup as we cannot get the actual key pressed, so we do it after
-                //the fact
-                this.tagInput.keyup(createTagListener);
-            } else {
-                //Otherwise, we can use keydown as we trust that the event will contain the real key pressed.
-                this.tagInput.keydown(createTagListener);
-            }
-
-
-            this.tagInput.keydown(function(event) {
+                //the fact using keyup
+                .keyup(createTagListener)
+                .keydown(function(event) {
                 // Backspace is not detected within a keypress, so it must use keydown
                 if (event.which == $.ui.keyCode.BACKSPACE && that.tagInput.val() === '') {
                     var tag = that._lastTag();
@@ -318,6 +311,12 @@
                     }
                 } else if (that.options.removeConfirmation) {
                     that._lastTag().removeClass('remove ui-state-highlight');
+                }
+
+                if ((event.keyCode || event.which || event.charCode || 0) === 13) {
+                    //Because we're tagging on keyup, sometimes hitting enter will get us here, and we want to ensure
+                    //that we've tagged as much as possible before allowing the form to submit:
+                    createTagListener(event);
                 }
             });
 
