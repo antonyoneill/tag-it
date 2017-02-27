@@ -319,14 +319,16 @@
                         ))
                     ) {
                         // Enter submits the form if there's no text in the input, prevent it otherwise
-                        if (isKeyDown && keyPressed === $.ui.keyCode.ENTER && that.tagInput.val() !== '') {
+                        if (isKeyDown && !(keyPressed === $.ui.keyCode.ENTER && that.tagInput.val() === '')) {
                             event.preventDefault();
                         }
 
-                        if (!isKeyDown && commaPressed) {
-                          //If we're in a keyup event then the comma is already in the string.
-                            that.tagInput.val(trimmedInput.substring(0, trimmedInput.length - 1));
+                        //The comma is the odd one out, because $.trim() will deal with /\s/ but won't deal with /,/ obviously.
+                        if (commaPressed && !isKeyDown) {
+                              // If we're in a keyup event then the comma is already in the string and so take it out
+                              that.tagInput.val(trimmedInput.substring(0, trimmedInput.length - 1));
                         }
+
 
                         // Autocomplete will create its own tag from a selection and close automatically.
                         if (!(that.options.autocomplete.autoFocus && that.tagInput.data('autocomplete-open'))) {
