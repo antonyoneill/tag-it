@@ -28,16 +28,16 @@
 
     $.widget('ui.tagit', {
         options: {
-            allowDuplicates   : false,
-            caseSensitive     : true,
-            fieldName         : 'tags',
-            placeholderText   : null,   // Sets `placeholder` attr on input field.
-            readOnly          : false,  // Disables editing.
-            removeConfirmation: false,  // Require confirmation to remove tags.
-            tagLimit          : null,   // Max number of tags allowed (null for unlimited).
+            allowDuplicates: false,
+            caseSensitive: true,
+            fieldName: 'tags',
+            placeholderText: null, // Sets `placeholder` attr on input field.
+            readOnly: false, // Disables editing.
+            removeConfirmation: false, // Require confirmation to remove tags.
+            tagLimit: null, // Max number of tags allowed (null for unlimited).
 
             // Used for autocomplete, unless you override `autocomplete.source`.
-            availableTags     : [],
+            availableTags: [],
 
             // Use to override or add any options to the autocomplete widget.
             //
@@ -85,14 +85,14 @@
             tabIndex: null,
 
             // Event callbacks.
-            beforeTagAdded      : null,
-            afterTagAdded       : null,
+            beforeTagAdded: null,
+            afterTagAdded: null,
 
-            beforeTagRemoved    : null,
-            afterTagRemoved     : null,
+            beforeTagRemoved: null,
+            afterTagRemoved: null,
 
-            onTagClicked        : null,
-            onTagLimitExceeded  : null,
+            onTagClicked: null,
+            onTagLimitExceeded: null,
 
 
             // DEPRECATED:
@@ -100,7 +100,7 @@
             // /!\ These event callbacks are deprecated and WILL BE REMOVED at some
             // point in the future. They're here for backwards-compatibility.
             // Use the above before/after event callbacks instead.
-            onTagAdded  : null,
+            onTagAdded: null,
             onTagRemoved: null,
             // `autocomplete.source` is the replacement for tagSource.
             tagSource: null
@@ -114,9 +114,15 @@
             }
             $(this).attr('size', text.length);
             if (this.options.animate && animate) {
-                this.tagInput.animate({'placeholder': text, size: text.length});
+                this.tagInput.animate({
+                    'placeholder': text,
+                    size: text.length
+                });
             } else {
-                this.tagInput.attr({'placeholder': text, size: text.length});
+                this.tagInput.attr({
+                    'placeholder': text,
+                    size: text.length
+                });
             }
         },
 
@@ -202,7 +208,10 @@
                     if (target.hasClass('tagit-label')) {
                         var tag = target.closest('.tagit-choice');
                         if (!tag.hasClass('removed')) {
-                            that._trigger('onTagClicked', e, {tag: tag, tagLabel: that.tagLabel(tag)});
+                            that._trigger('onTagClicked', e, {
+                                tag: tag,
+                                tagLabel: that.tagLabel(tag)
+                            });
                         }
                     } else {
                         // Sets the focus() to the input field, if the user
@@ -243,84 +252,122 @@
 
             //Events
 
-            var createTagListener = function(event) {
-                //There are some issues with Android where the event doesn't actually provide the keycode as you'd expect!
-                //This is actually also an issue on iPad when you use a physical keyboard (like a BT):
-                // http://stackoverflow.com/a/28951227
 
-                var keyPressed = event.keyCode || event.which;
-                if (navigator.userAgent.match(/Android|iPad/i)) {
-                    var tag = this.value;
-                    if (keyPressed == 0 || keyPressed == 229) {
-                        //If it's one of these then don't trust it and just get the last char in the input
-                        keyPressed = tag.charCodeAt(tag.length - 1);
+
+            /**
+             * Returns a keyup/keydown event listener function.
+             *
+             * We've had issues with Android/iPads not passing the correct keypressed code on keyup depending on the keyboard
+             * that is used so we have to use keyup in those cases.
+             *
+             * @param  {type} isKeyDown description
+             * @returns {type}           description
+             */
+            var createTagEventListener = function(isKeyDown) {
+                return function(event) {
+                    //There are some issues with Android where the event doesn't actually provide the keycode as you'd expect!
+                    //This is actually also an issue on iPad when you use a physical keyboard (like a BT):
+                    //http://stackoverflow.com/a/28951227
+
+                    var keyPressed = event.keyCode || event.which;
+                    if (!isKeyDown) {
+                        // A keyup event means the key has already been inserted
+                        var tag = this.value;
+                        if (keyPressed == 0 || keyPressed == 229) {
+                            // If it's one of these then don't trust it and just get the last char in the input
+                            var char = tag.charCodeAt(tag.length - 1);
+                            // The char code doesn't actually correspond to a keyCode as per the javascript event spec
+                            // for example a comma has a keyCode of 188 but charCode of 44!
+                            // In order for the logic below to detect a comma,enter,tab, or space we'll translate
+                            // it quickly now.
+                            switch (char) {
+                                case ",".charCodeAt(0):
+                                    keyPressed = $.ui.keyCode.COMMA;
+                                    break;
+                                case " ".charCodeAt(0):
+                                    keyPressed = $.ui.keyCode.SPACE;
+                                    break;
+                            }
+                        }
                     }
-                }
 
+                    // Comma/Space/Enter are all valid delimiters for new tags,
+                    // except when there is an open quote or if setting allowSpaces = true.
+                    // Tab will also create a tag, unless the tag input is empty,
+                    // in which case it isn't caught.
+                    var commaPressed = keyPressed === $.ui.keyCode.COMMA && event.shiftKey === false;
+                    var enterPressed = keyPressed === $.ui.keyCode.ENTER;
+                    var tabPressed = keyPressed === $.ui.keyCode.TAB && that.tagInput.val() !== '';
+                    var spacePressed = keyPressed === $.ui.keyCode.SPACE;
+                    var dontAllowSpaces = that.options.allowSpaces !== true;
 
-                // Comma/Space/Enter are all valid delimiters for new tags,
-                // except when there is an open quote or if setting allowSpaces = true.
-                // Tab will also create a tag, unless the tag input is empty,
-                // in which case it isn't caught.
-                if (
-                    (keyPressed === $.ui.keyCode.COMMA && event.shiftKey === false) ||
-                    keyPressed === $.ui.keyCode.ENTER ||
-                    (
-                        keyPressed == $.ui.keyCode.TAB &&
-                        that.tagInput.val() !== ''
-                    ) ||
-                    (
-                        keyPressed == $.ui.keyCode.SPACE &&
-                        that.options.allowSpaces !== true &&
-                        (
-                            $.trim(that.tagInput.val()).replace( /^s*/, '' ).charAt(0) != '"' ||
+                    var trimmedInput = $.trim(that.tagInput.val());
+
+                    if (commaPressed || enterPressed || tabPressed ||
+                        (spacePressed && dontAllowSpaces && (
+                            //Input doesn't start with a " when removing all 's' characters from the beginning
+                            //TODO(AO): The original author may have meant this to be removing all whitespace?
+                            trimmedInput.replace(/^s*/, '').charAt(0) != '"' ||
                             (
-                                $.trim(that.tagInput.val()).charAt(0) == '"' &&
-                                $.trim(that.tagInput.val()).charAt($.trim(that.tagInput.val()).length - 1) == '"' &&
-                                $.trim(that.tagInput.val()).length - 1 !== 0
+                                //Start of the string is a "
+                                trimmedInput.charAt(0) == '"' &&
+                                //The final char is a "
+                                trimmedInput.charAt(trimmedInput.length - 1) == '"' &&
+                                //The length of the input is greater than 1 char
+                                trimmedInput.length - 1 !== 0
                             )
-                        )
-                    )
-                ) {
-                    // Enter submits the form if there's no text in the input.
-                    if (!(keyPressed === $.ui.keyCode.ENTER && that.tagInput.val() === '')) {
-                        event.preventDefault();
-                    }
+                        ))
+                    ) {
+                        // Enter submits the form if there's no text in the input, prevent it otherwise
+                        if (isKeyDown && keyPressed === $.ui.keyCode.ENTER && that.tagInput.val() !== '') {
+                            event.preventDefault();
+                        }
 
-                    // Autocomplete will create its own tag from a selection and close automatically.
-                    if (!(that.options.autocomplete.autoFocus && that.tagInput.data('autocomplete-open'))) {
-                        that.tagInput.autocomplete('close');
-                        that.createTag(that._cleanedInput());
+                        if (!isKeyDown && commaPressed) {
+                          //If we're in a keyup event then the comma is already in the string.
+                            that.tagInput.val(trimmedInput.substring(0, trimmedInput.length - 1));
+                        }
+
+                        // Autocomplete will create its own tag from a selection and close automatically.
+                        if (!(that.options.autocomplete.autoFocus && that.tagInput.data('autocomplete-open'))) {
+                            that.tagInput.autocomplete('close');
+                            that.createTag(that._cleanedInput());
+                        }
                     }
                 }
             };
 
-            this.tagInput
-                //If Android or iOS, we need to use keyup as we cannot get the actual key pressed, so we do it after
-                //the fact using keyup
-                .keyup(createTagListener)
-                .keydown(function(event) {
-                // Backspace is not detected within a keypress, so it must use keydown
-                if (event.which == $.ui.keyCode.BACKSPACE && that.tagInput.val() === '') {
-                    var tag = that._lastTag();
-                    if (!that.options.removeConfirmation || tag.hasClass('remove')) {
-                        // When backspace is pressed, the last tag is deleted.
-                        that.removeTag(tag);
-                    } else if (that.options.removeConfirmation) {
-                        tag.addClass('remove ui-state-highlight');
+            if (navigator.userAgent.match(/Android|iPad/i)) {
+                //We don't trust Android or iPad to give us the actual key that was pressed on keydown,
+                //so we must use keyup
+                this.tagInput.keyup(createTagEventListener(false));
+                this.tagInput.keydown(function(event) {
+                    var keyPressed = event.keyCode || event.which;
+                    // Enter submits the form if there's no text in the input, prevent it otherwise
+                    if (keyPressed === $.ui.keyCode.ENTER && that.tagInput.val() !== '') {
+                        event.preventDefault();
                     }
-                } else if (that.options.removeConfirmation) {
-                    that._lastTag().removeClass('remove ui-state-highlight');
-                }
+                });
+            } else {
+                this.tagInput.keydown(createTagEventListener(true));
+            }
 
-                if ((event.keyCode || event.which || event.charCode || 0) === $.ui.keyCode.ENTER) {
-                    //Because we're tagging on keyup, sometimes hitting enter will get us here, and we want to ensure
-                    //that we've tagged as much as possible before allowing the form to submit:
-                    createTagListener(event);
-                }
-            });
+            this.tagInput.keydown(function(event) {
+                    // Backspace is not detected within a keypress, so it must use keydown
+                    if (event.which == $.ui.keyCode.BACKSPACE && that.tagInput.val() === '') {
+                        var tag = that._lastTag();
+                        if (!that.options.removeConfirmation || tag.hasClass('remove')) {
+                            // When backspace is pressed, the last tag is deleted.
+                            that.removeTag(tag);
+                        } else if (that.options.removeConfirmation) {
+                            tag.addClass('remove ui-state-highlight');
+                        }
+                    } else if (that.options.removeConfirmation) {
+                        that._lastTag().removeClass('remove ui-state-highlight');
+                    }
+                });
 
-            this.tagInput.blur(function(e){
+            this.tagInput.blur(function(e) {
                 // Create a tag when the element loses focus.
                 // If autocomplete is enabled and suggestion was clicked, don't add it.
                 if (!that.tagInput.data('autocomplete-open')) {
@@ -490,7 +537,7 @@
 
             value = $.trim(value);
 
-            if(this.options.preprocessTag) {
+            if (this.options.preprocessTag) {
                 value = this.options.preprocessTag(value);
             }
 
@@ -512,7 +559,9 @@
             }
 
             if (this.options.tagLimit && this._tags().length >= this.options.tagLimit) {
-                this._trigger('onTagLimitExceeded', null, {duringInitialization: duringInitialization});
+                this._trigger('onTagLimitExceeded', null, {
+                    duringInitialization: duringInitialization
+                });
                 return false;
             }
 
@@ -524,7 +573,7 @@
                 .addClass(additionalClass)
                 .append(label);
 
-            if (this.options.readOnly){
+            if (this.options.readOnly) {
                 tag.addClass('tagit-choice-read-only');
             } else {
                 tag.addClass('tagit-choice-editable');
@@ -580,7 +629,9 @@
             });
 
             if (this.options.showAutocompleteOnFocus && !duringInitialization) {
-                setTimeout(function () { that._showAutocomplete(); }, 0);
+                setTimeout(function() {
+                    that._showAutocomplete();
+                }, 0);
             }
         },
 
@@ -604,7 +655,7 @@
             if (this.options.singleField) {
                 var tags = this.assignedTags();
                 var removedTagLabel = this.tagLabel(tag);
-                tags = $.grep(tags, function(el){
+                tags = $.grep(tags, function(el) {
                     return el != removedTagLabel;
                 });
                 this._updateSingleTagsField(tags);
@@ -612,7 +663,9 @@
 
             if (animate) {
                 tag.addClass('removed'); // Excludes this tag from _tags.
-                var hide_args = this._effectExists('blind') ? ['blind', {direction: 'horizontal'}, 'fast'] : ['fast'];
+                var hide_args = this._effectExists('blind') ? ['blind', {
+                    direction: 'horizontal'
+                }, 'fast'] : ['fast'];
 
                 var thisTag = this;
                 hide_args.push(function() {
@@ -645,8 +698,8 @@
                 var scrollTop = 10000;
                 if (that.options.animate) {
                     $ul.animate({
-                       scrollTop: scrollTop
-                   }, 'slow');
+                        scrollTop: scrollTop
+                    }, 'slow');
                 } else {
                     $ul.scrollTop(scrollTop);
                 }
@@ -671,4 +724,3 @@
 
     });
 })(jQuery);
-
